@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href="../bower_components/polymer/polymer.html" rel="import">
+    <link href="../bower_components/firebase-element/firebase-document.html" rel="import">
+    <script src="../bower_components/rxjs/dist/rx.lite.js"></script>
+</head>
+
+<dom-module id="poly-fire">
+	<template>
+        <!--<firebase-document
+            location = "https://polyrx-fire.firebaseio.com//trial"
+            data     = "{{trial}}">
+        </firebase-document>--> 
+	</template>
+</dom-module>
+
+<script>
+  // element registration
+  Polymer({
+    is: "poly-fire",
+    
+    
+    // add properties and methods on the element's prototype
+    properties: {
+    	// declare properties for the element's public API
+		todo: {
+			type: Array,
+			value: []
+		}
+    },
+	ready: function(e){
+        debugger;
+
+	}
+  });
+
+ 
+</script>

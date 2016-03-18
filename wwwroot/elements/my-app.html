@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+  
+	<link href="../bower_components/polymer/polymer.html" rel="import">
+    <link rel="import" href="../bower_components/firebase-element/firebase-auth.html">
+    <link rel="import" href="../bower_components/firebase-element/firebase.html">
+    <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+    <link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+    <link rel="import" href="../bower_components/paper-button/paper-button.html">
+    <link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+    <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+    <link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
+    <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
+    <link rel="import" href="../bower_components/paper-input/paper-input.html">
+    <link href="../elements/poly-canvas.html" rel="import">
+</head>
+
+<dom-module id="my-app">
+	<style>
+	body {
+    font-family: Roboto, sans-serif;
+    color: #333;
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto;
+    }
+
+    form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+    width: 300px;
+    }
+
+    paper-button {
+    flex-shrink: 1;
+    }
+    paper-input {
+    flex-grow: 1;
+    }
+
+    paper-checkbox {
+    display: inline-block;
+    margin: 5px 0;
+    transition: opacity 0.3s;
+    }
+
+    paper-checkbox[checked] {
+    opacity: 0.5;
+    }
+	
+
+	</style>
+  
+	<template>
+        <firebase-auth
+            auto-login
+            redirect
+            location="[[firebaseURL]]"
+            provider="[[firebaseProvider]]"
+            on-error="onFirebaseError"
+            on-login="onFirebaseLogin"></firebase-auth>
+        <paper-toast id="errorToast"></paper-toast>
+        <form on-submit="addItem">
+            <paper-input value="{{newItemValue}}" 
+                placeholder="Enter your item here..."></paper-input>
+            <paper-button on-click="addItem">Add</paper-button>
+        </form>
+        <template is="dom-repeat" items="{{items}}">
+            <div>
+                <paper-icon-button icon="delete" 
+                on-click="deleteItem"></paper-icon-button>
+                <paper-checkbox on-change="toggleItem"
+                checked="{{item.done}}">[[item.text]]</paper-checkbox>
+            </div>
+        </template>
+        <h2>Hello canvas:</h2>
+        <poly-canvas class="shadow" width="300px" height="300px">
+        
+    </template>
+</dom-module>
+
+<script>
+  // element registration
+  var ref;
+  var self;
+  Polymer({
+    is: "my-app",
+    properties: {
+        newItemValue: {
+            type: String
+        },
+        firebaseURL: {
+            type: String,
+            value: 'https://polyrx-fire.firebaseio.com'
+        },
+        firebaseProvider: {
+            type: String,
+            value: 'anonymous'
+        },
+        items: {
+            type: Array,
+            value: []
+        },
+    },
+    ready: function(e){
+        self = this;
+    },
+    onFirebaseError: function(event) {
+    this.$.errorToast.text = event.detail.message;
+    this.$.errorToast.show();
+    },
+    onFirebaseLogin: function(event) {
+        //ref = new Firebase(this.firebaseURL + '/user/' + event.detail.user.uid);
+        ref = new Firebase(this.firebaseURL);
+        ref.on('value', function(snapshot) {
+            self.updateItems(snapshot);
+        });  
+    },
+    updateItems: function(snapshot) {
+        this.items = [];
+        snapshot.forEach(function(childSnapshot) {
+            var item = childSnapshot.val();
+            item.uid = childSnapshot.key();
+            this.push('items', item);
+        }.bind(this));
+    },
+    addItem: function(event) {
+        event.preventDefault(); // Don't send the form!
+        ref.push({
+            done: false,
+            text: this.newItemValue
+        });
+        this.newItemValue = '';
+    },
+    toggleItem: function(event) {
+        ref.
+            child(event.model.item.uid).
+            update({done: event.model.item.done});
+    },
+    deleteItem: function(event) {
+        ref.child(event.model.item.uid).remove();
+    } 
+  });
+
+ 
+</script>

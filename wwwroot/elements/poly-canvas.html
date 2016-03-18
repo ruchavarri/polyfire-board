@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href="../bower_components/polymer/polymer.html" rel="import">
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/rxjs/dist/rx.lite.js"></script>
+</head>
+
+<dom-module id="poly-canvas">
+	<style>
+	.list {
+		padding: 0;
+/* 		border-right: 1px solid #ccc; */
+	}
+	
+	.list paper-item {
+		min-height: 80px;
+		border-bottom: 1px solid #dedede;
+		background-color: #fafafa;
+	}
+	
+	#todoEntry {
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		border-bottom: 1px solid #ccc;
+	}
+	
+	paper-input {
+		margin: 0 4vw;
+		padding: 0;
+	}
+	
+	paper-material {
+		background-color: #fff;
+		max-width: 640px;
+		width: 95%;
+		margin: 25px auto;
+		position: relative;
+	}
+	
+	#todos {
+		overflow-y: scroll;
+		height: 66vh;
+	}
+
+	#todos {
+		overflow-y: scroll;
+	}
+  
+	paper-fab {
+	    position: absolute;
+	    background: #00BCD4;
+	    bottom: 2vh;
+	    right: 2vw;
+    }
+
+	.main-panel {
+		background-color: #eee;
+		height: 100vh;
+		overflow-y: hidden;
+	}
+	
+	.task-empty paper-item {
+		text-align: center;
+		padding: 25px;
+		color: #6f6f6f;
+	}
+
+	paper-toolbar {
+		background:#D32F2F;
+	}
+	
+	#made-with {
+		width:100%;
+		margin:0;
+		position: fixed;
+		bottom: 0;
+		text-align: center;
+	}
+	
+	#made-with img {
+		width: 35%;
+		padding: 10px;
+	}
+	</style>
+  
+	<template>
+        <div class="row-fluid">
+            <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+	</template>
+</dom-module>
+
+<script>
+  // element registration
+  Polymer({
+    is: "poly-canvas",
+    
+    
+    // add properties and methods on the element's prototype
+    properties: {
+    	// declare properties for the element's public API
+		todo: {
+			type: Array,
+			value: []
+		}
+    },
+	ready: function(e){
+        // Calculate offset either layerX/Y or offsetX/Y
+        function getOffset(event) {
+            return {
+                x: event.offsetX === undefined ? event.layerX : event.offsetX,
+                y: event.offsetY === undefined ? event.layerY : event.offsetY
+            };
+        }
+    
+        var _this = this;
+        this.canvas = this.$.canvas;
+        if (this.canvas.getContext) {
+            
+            var ctx = this.canvas.getContext('2d');
+            ctx.lineWidth = 3;
+
+            var mouseDowns  = Rx.Observable.fromEvent(this.canvas, 'mousedown');
+            var mouseUps    = Rx.Observable.fromEvent(document, 'mouseup');
+            var mouseMoves  = Rx.Observable.fromEvent(this.canvas, 'mousemove');
+            var clearButton = Rx.Observable.fromEvent($('#clear'), 'click');
+
+            var mouseDrags = mouseDowns.select(function (downEvent) {
+                _this.prevPoint = "";
+                return mouseMoves.takeUntil(mouseUps).select(function (drag) {
+                    return getOffset(drag);
+                });
+            });
+
+            // UI EVENTS
+            mouseDrags.subscribe(function (drags) {
+                // $colour = $('#colour').val();
+                // $colour = $colour ? $colour : '#df4b26';
+                //var _dragref = _ref.push({colour: $colour});
+                var colour = '#df4b26';
+                
+                drags.subscribe(function (move) {
+                    _this.fire('draw', {x: move.x, y: move.y});
+                    if (!_this.prevPoint)
+                    {
+                        _this.prevPoint = {x: move.x, y: move.y}
+                    }
+                    else
+                    {
+                       ctx.beginPath();
+                        ctx.strokeStyle = colour;
+                        ctx.moveTo(_this.prevPoint.x, _this.prevPoint.y);
+                        ctx.lineTo(move.x, move.y);
+                        ctx.stroke(); 
+                        _this.prevPoint = {x: move.x, y: move.y}
+                        
+                    }
+                    
+                    //_dragref.ref().child('points').push({x: move.x, y: move.y});
+                    
+                });
+            });
+
+            clearButton.subscribe(function () {
+                _ref.remove();
+            });
+
+//             // DRAWING CODE - called from Firebase event
+//             var drawLine = function (data) {
+//                 // get current point
+//                 var coordsTo = data.snapshot.val();
+//                 // get colour
+//                 data.snapshot.ref().parent().parent().child('colour')
+//                 .once('value', function (snap) {
+//                     var colour = snap.val();
+//                     // get previous point
+//                     data.snapshot.ref().parent().child(data.prevName)
+//                     .once('value', function (snap) {
+//                         var coordsFrom = snap.val();
+//                         ctx.beginPath();
+//                         ctx.strokeStyle = colour;
+//                         ctx.moveTo(coordsFrom.x, coordsFrom.y);
+//                         ctx.lineTo(coordsTo.x, coordsTo.y);
+//                         ctx.stroke();
+//                     });
+//                 });
+//             };
+// 
+//             // FIRBASE EVENTS
+//             _ref.observe('child_added')
+//             .subscribe(function (newLine) {
+//                 newLine.snapshot.child('points').ref()
+//                 .observe('child_added')
+//                 .filter(function (data) { return data.prevName !== null;})
+//                 .subscribe(drawLine);
+//             });
+// 
+//             _ref.on('child_removed', function (snap) {
+//                 canvas.width = canvas.width;
+//                 ctx.lineWidth = 3;
+//             });      
+        }
+	}
+  });
+
+ 
+</script>
