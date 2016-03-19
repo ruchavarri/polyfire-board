@@ -110,7 +110,11 @@
         },
     },
     ready: function(e){
+        this.addEventListener('draw', this.handleDraw);
         self = this;
+    },
+    handleDraw: function(point) {
+        console.log(point.detail.x + " " + point.detail.y );
     },
     onFirebaseError: function(event) {
     this.$.errorToast.text = event.detail.message;
