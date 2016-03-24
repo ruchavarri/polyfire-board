@@ -101,7 +101,8 @@
         <div class="row-fluid">
             <canvas id="canvas" width="640" height="480"></canvas>
         </div>
-        <paper-swatch-picker color="{{selectedColor}}"></paper-swatch-picker>
+        <paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
+        {{selectedColor}}
         <paper-button on-click="cleanCanvas">Clean</paper-button>
 	</template>
 </dom-module>
@@ -121,7 +122,8 @@
             type: String
         },        
         selectedColor: {
-            type: String
+            type: String,
+            reflect: true
         },
         firebaseURL: {
             type: String,
@@ -168,7 +170,7 @@
 
             // UI EVENTS
             mouseDrags.subscribe(function (drags) {
-                $colour = $('#colour').val();
+                $colour = $('#colorPicker').prop("color")
                 $colour = $colour ? $colour : '#df4b26';
                 
                 var dragref = ref.push({colour: $colour});
