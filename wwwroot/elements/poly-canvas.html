@@ -8,6 +8,7 @@
     <link href="../bower_components/firebase-element/firebase.html" rel="import">
     <link href="../bower_components/paper-input/paper-input.html" rel="import">
     <link href="../bower_components/paper-swatch-picker/paper-swatch-picker.html" rel="import">
+    <script src="../scripts/rx.firebase.js"></script>
 </head>
 
 <dom-module id="poly-canvas">
@@ -215,9 +216,43 @@
     },
     onFirebaseLogin: function(event) {
         ref = new Firebase(this.firebaseURL);
+       
+        
+        var drawLine = function (data) {
+            //debugger;
+            // get current point
+            var coordsTo = data.snapshot.val();
+            // get colour
+            data.snapshot.ref().parent().parent().child('colour')
+            .once('value', function (snap) {
+                var colour = snap.val();
+                // get previous point
+                data.snapshot.ref().parent().child(data.prevName)
+                .once('value', function (snap) {
+                    var coordsFrom = snap.val();
+                    ctx.beginPath();
+                    ctx.strokeStyle = colour;
+                    ctx.moveTo(coordsFrom.x, coordsFrom.y);
+                    ctx.lineTo(coordsTo.x, coordsTo.y);
+                    ctx.stroke();
+                });
+            });
+        };
+           
+        ref.observe('child_added')
+            .subscribe(function (newLine) {
+                newLine.snapshot.child('points').ref()
+                .observe('child_added')
+                .filter(function (data) { return data.prevName !== null;})
+                .subscribe(drawLine);
+            });
+        
+        
+        /*
         ref.on('value', function(snapshot) {
             this.items = [];
             var coordsFrom;
+            
             snapshot.forEach(function(childSnapshot) {
                 var coordsFrom = null;
                 var item = childSnapshot.val();
@@ -240,6 +275,7 @@
                 }
             }.bind(this));
         }); 
+        */
 
         ref.on('child_removed', function (snap) {
             canvas.width = canvas.width;
