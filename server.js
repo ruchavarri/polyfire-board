@@ -5,7 +5,7 @@ var bodyParser     = require('body-parser');
 
 var port = process.env.PORT || 8080; // set our port
 
-app.use(express.static(__dirname + '/wwwroot')); // set the static files location /public/img will be /img for users
+app.use(express.static(__dirname )); // + '/wwwroot')); // set the static files location /public/img will be /img for users
 
 
 // start app ===============================================
