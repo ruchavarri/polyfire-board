@@ -4,6 +4,10 @@
 	<link href="../bower_components/polymer/polymer.html" rel="import">
     <script src="../bower_components/jquery/dist/jquery.js"></script>
     <script src="../bower_components/rxjs/dist/rx.lite.js"></script>
+    <link href="../bower_components/firebase-element/firebase-auth.html" rel="import" >
+    <link href="../bower_components/firebase-element/firebase.html" rel="import">
+    <link href="../bower_components/paper-input/paper-input.html" rel="import">
+    <link href="../bower_components/paper-swatch-picker/paper-swatch-picker.html" rel="import">
 </head>
 
 <dom-module id="poly-canvas">
@@ -85,26 +89,51 @@
 	}
 	</style>
   
-	<template>
+	<template><firebase-auth
+            auto-login
+            redirect
+            location="[[firebaseURL]]"
+            provider="[[firebaseProvider]]"
+            on-error="onFirebaseError"
+            on-login="onFirebaseLogin"></firebase-auth>
+        <paper-toast id="errorToast"></paper-toast>
         <div class="row-fluid">
             <canvas id="canvas" width="640" height="480"></canvas>
         </div>
+        <paper-swatch-picker color="{{selectedColor}}"></paper-swatch-picker>
+        <paper-button on-click="cleanCanvas">Clean</paper-button>
 	</template>
 </dom-module>
 
 <script>
   // element registration
+  var ref;
+  var self;
+  var ctx;
   Polymer({
     is: "poly-canvas",
     
     
     // add properties and methods on the element's prototype
     properties: {
-    	// declare properties for the element's public API
-		todo: {
-			type: Array,
-			value: []
-		}
+        newItemValue: {
+            type: String
+        },        
+        selectedColor: {
+            type: String
+        },
+        firebaseURL: {
+            type: String,
+            value: 'https://polyrx-fire.firebaseio.com'
+        },
+        firebaseProvider: {
+            type: String,
+            value: 'anonymous'
+        },
+        items: {
+            type: Array,
+            value: []
+        },
     },
 	ready: function(e){
         // Calculate offset either layerX/Y or offsetX/Y
@@ -114,12 +143,14 @@
                 y: event.offsetY === undefined ? event.layerY : event.offsetY
             };
         }
-    
+        
+        self = this;
         var _this = this;
+        //ref = new Firebase(this.firebaseURL);
         this.canvas = this.$.canvas;
         if (this.canvas.getContext) {
             
-            var ctx = this.canvas.getContext('2d');
+            ctx = this.canvas.getContext('2d');
             ctx.lineWidth = 3;
 
             var mouseDowns  = Rx.Observable.fromEvent(this.canvas, 'mousedown');
@@ -136,73 +167,96 @@
 
             // UI EVENTS
             mouseDrags.subscribe(function (drags) {
-                // $colour = $('#colour').val();
-                // $colour = $colour ? $colour : '#df4b26';
-                //var _dragref = _ref.push({colour: $colour});
-                var colour = '#df4b26';
+                $colour = $('#colour').val();
+                $colour = $colour ? $colour : '#df4b26';
+                
+                var dragref = ref.push({colour: $colour});
+                //console.log("colour: " + $colour);
+                //var colour = '#df4b26';
                 
                 drags.subscribe(function (move) {
-                    _this.fire('draw', {x: move.x, y: move.y});
-                    if (!_this.prevPoint)
-                    {
-                        _this.prevPoint = {x: move.x, y: move.y}
-                    }
-                    else
-                    {
-                       ctx.beginPath();
-                        ctx.strokeStyle = colour;
-                        ctx.moveTo(_this.prevPoint.x, _this.prevPoint.y);
-                        ctx.lineTo(move.x, move.y);
-                        ctx.stroke(); 
-                        _this.prevPoint = {x: move.x, y: move.y}
-                        
-                    }
+                    // _this.fire('draw', {x: move.x, y: move.y});
+                    // if (!_this.prevPoint)
+                    // {
+                    //     _this.prevPoint = {x: move.x, y: move.y}
+                    // }
+                    // else
+                    // {
+                    //    ctx.beginPath();
+                    //     ctx.strokeStyle = colour;
+                    //     ctx.moveTo(_this.prevPoint.x, _this.prevPoint.y);
+                    //     ctx.lineTo(move.x, move.y);
+                    //     ctx.stroke(); 
+                    //     _this.prevPoint = {x: move.x, y: move.y}
+                    //     
+                    // }
                     
-                    //_dragref.ref().child('points').push({x: move.x, y: move.y});
+                    dragref.ref().child('points').push({x: move.x, y: move.y});
+                    //console.log("x: " + move.x + " y:" + move.y);
                     
                 });
             });
 
             clearButton.subscribe(function () {
-                _ref.remove();
+                ref.remove();
             });
 
-//             // DRAWING CODE - called from Firebase event
-//             var drawLine = function (data) {
-//                 // get current point
-//                 var coordsTo = data.snapshot.val();
-//                 // get colour
-//                 data.snapshot.ref().parent().parent().child('colour')
-//                 .once('value', function (snap) {
-//                     var colour = snap.val();
-//                     // get previous point
-//                     data.snapshot.ref().parent().child(data.prevName)
-//                     .once('value', function (snap) {
-//                         var coordsFrom = snap.val();
-//                         ctx.beginPath();
-//                         ctx.strokeStyle = colour;
-//                         ctx.moveTo(coordsFrom.x, coordsFrom.y);
-//                         ctx.lineTo(coordsTo.x, coordsTo.y);
-//                         ctx.stroke();
-//                     });
-//                 });
-//             };
+//             
 // 
-//             // FIRBASE EVENTS
-//             _ref.observe('child_added')
-//             .subscribe(function (newLine) {
-//                 newLine.snapshot.child('points').ref()
-//                 .observe('child_added')
-//                 .filter(function (data) { return data.prevName !== null;})
-//                 .subscribe(drawLine);
-//             });
-// 
-//             _ref.on('child_removed', function (snap) {
-//                 canvas.width = canvas.width;
-//                 ctx.lineWidth = 3;
-//             });      
+//             
         }
-	}
+	},
+    // handleDraw: function(point) {
+    //     console.log(point.detail.x + " " + point.detail.y );
+    // },
+    onFirebaseError: function(event) {
+    this.$.errorToast.text = event.detail.message;
+    this.$.errorToast.show();
+    },
+    onFirebaseLogin: function(event) {
+        ref = new Firebase(this.firebaseURL);
+        ref.on('value', function(snapshot) {
+            this.items = [];
+            var coordsFrom;
+            snapshot.forEach(function(childSnapshot) {
+                var coordsFrom = null;
+                var item = childSnapshot.val();
+                var colour = item.colour;
+                item.uid = childSnapshot.key();
+                for(var point in item.points) {
+                    var coordsTo = item.points[point];
+                    if (!coordsFrom)
+                    {
+                        coordsFrom = coordsTo;
+                    }
+                    else{
+                        ctx.beginPath();
+                        ctx.strokeStyle = colour;
+                        ctx.moveTo(coordsFrom.x, coordsFrom.y);
+                        ctx.lineTo(coordsTo.x, coordsTo.y);
+                        ctx.stroke();
+                        coordsFrom = coordsTo;
+                    }
+                }
+            }.bind(this));
+        }); 
+
+        ref.on('child_removed', function (snap) {
+            canvas.width = canvas.width;
+            ctx.lineWidth = 3;
+        });    
+    },
+    updateItems: function(snapshot) {
+        this.items = [];
+        snapshot.forEach(function(childSnapshot) {
+            var item = childSnapshot.val();
+            item.uid = childSnapshot.key();
+            this.push('items', item);
+        }.bind(this));
+    },
+    cleanCanvas: function(event) {
+       ref.remove();
+    }    
   });
 
  

@@ -59,7 +59,7 @@
 	</style>
   
 	<template>
-        <firebase-auth
+        <!--<firebase-auth
             auto-login
             redirect
             location="[[firebaseURL]]"
@@ -79,7 +79,7 @@
                 <paper-checkbox on-change="toggleItem"
                 checked="{{item.done}}">[[item.text]]</paper-checkbox>
             </div>
-        </template>
+        </template>-->
         <h2>Hello canvas:</h2>
         <poly-canvas class="shadow" width="300px" height="300px">
         
@@ -112,45 +112,45 @@
     ready: function(e){
         this.addEventListener('draw', this.handleDraw);
         self = this;
-    },
-    handleDraw: function(point) {
-        console.log(point.detail.x + " " + point.detail.y );
-    },
-    onFirebaseError: function(event) {
-    this.$.errorToast.text = event.detail.message;
-    this.$.errorToast.show();
-    },
-    onFirebaseLogin: function(event) {
-        //ref = new Firebase(this.firebaseURL + '/user/' + event.detail.user.uid);
-        ref = new Firebase(this.firebaseURL);
-        ref.on('value', function(snapshot) {
-            self.updateItems(snapshot);
-        });  
-    },
-    updateItems: function(snapshot) {
-        this.items = [];
-        snapshot.forEach(function(childSnapshot) {
-            var item = childSnapshot.val();
-            item.uid = childSnapshot.key();
-            this.push('items', item);
-        }.bind(this));
-    },
-    addItem: function(event) {
-        event.preventDefault(); // Don't send the form!
-        ref.push({
-            done: false,
-            text: this.newItemValue
-        });
-        this.newItemValue = '';
-    },
-    toggleItem: function(event) {
-        ref.
-            child(event.model.item.uid).
-            update({done: event.model.item.done});
-    },
-    deleteItem: function(event) {
-        ref.child(event.model.item.uid).remove();
-    } 
+    }
+//     handleDraw: function(point) {
+//         console.log(point.detail.x + " " + point.detail.y );
+//     },
+//     onFirebaseError: function(event) {
+//     this.$.errorToast.text = event.detail.message;
+//     this.$.errorToast.show();
+//     },
+//     onFirebaseLogin: function(event) {
+//         //ref = new Firebase(this.firebaseURL + '/user/' + event.detail.user.uid);
+//         ref = new Firebase(this.firebaseURL);
+//         ref.on('value', function(snapshot) {
+//             self.updateItems(snapshot);
+//         });  
+//     },
+//     updateItems: function(snapshot) {
+//         this.items = [];
+//         snapshot.forEach(function(childSnapshot) {
+//             var item = childSnapshot.val();
+//             item.uid = childSnapshot.key();
+//             this.push('items', item);
+//         }.bind(this));
+//     },
+//     addItem: function(event) {
+//         event.preventDefault(); // Don't send the form!
+//         ref.push({
+//             done: false,
+//             text: this.newItemValue
+//         });
+//         this.newItemValue = '';
+//     },
+//     toggleItem: function(event) {
+//         ref.
+//             child(event.model.item.uid).
+//             update({done: event.model.item.done});
+//     },
+//     deleteItem: function(event) {
+//         ref.child(event.model.item.uid).remove();
+//     } 
   });
 
  
