@@ -17,6 +17,7 @@
     <link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
     <link rel="import" href="../bower_components/paper-toast/paper-toast.html">
     <link rel="import" href="../bower_components/paper-input/paper-input.html">
+    <link href="../bower_components/paper-swatch-picker/paper-swatch-picker.html" rel="import">
     <link href="../elements/poly-canvas.html" rel="import">
 </head>
 
@@ -59,7 +60,7 @@
 	</style>
   
 	<template>
-        <!--<firebase-auth
+        <firebase-auth
             auto-login
             redirect
             location="[[firebaseURL]]"
@@ -67,7 +68,7 @@
             on-error="onFirebaseError"
             on-login="onFirebaseLogin"></firebase-auth>
         <paper-toast id="errorToast"></paper-toast>
-        <form on-submit="addItem">
+        <!--<form on-submit="addItem">
             <paper-input value="{{newItemValue}}" 
                 placeholder="Enter your item here..."></paper-input>
             <paper-button on-click="addItem">Add</paper-button>
@@ -80,8 +81,11 @@
                 checked="{{item.done}}">[[item.text]]</paper-checkbox>
             </div>
         </template>-->
+        <paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
+        {{selectedColor}}
+        <paper-button on-click="cleanCanvas">Clean</paper-button>
         <h2>Hello canvas:</h2>
-        <poly-canvas class="shadow" width="300px" height="300px">
+        <poly-canvas id="polyCanvas" class="shadow" width="300px" height="300px">
         
     </template>
 </dom-module>
@@ -90,6 +94,7 @@
   // element registration
   var ref;
   var self;
+  var dragref;
   Polymer({
     is: "my-app",
     properties: {
@@ -110,47 +115,40 @@
         },
     },
     ready: function(e){
-        this.addEventListener('draw', this.handleDraw);
+        this.addEventListener('down', this.handleDown);
+        this.addEventListener('move', this.handleMove);
+        this.addEventListener('up', this.handleUp);
         self = this;
-    }
-//     handleDraw: function(point) {
-//         console.log(point.detail.x + " " + point.detail.y );
-//     },
-//     onFirebaseError: function(event) {
-//     this.$.errorToast.text = event.detail.message;
-//     this.$.errorToast.show();
-//     },
-//     onFirebaseLogin: function(event) {
-//         //ref = new Firebase(this.firebaseURL + '/user/' + event.detail.user.uid);
-//         ref = new Firebase(this.firebaseURL);
-//         ref.on('value', function(snapshot) {
-//             self.updateItems(snapshot);
-//         });  
-//     },
-//     updateItems: function(snapshot) {
-//         this.items = [];
-//         snapshot.forEach(function(childSnapshot) {
-//             var item = childSnapshot.val();
-//             item.uid = childSnapshot.key();
-//             this.push('items', item);
-//         }.bind(this));
-//     },
-//     addItem: function(event) {
-//         event.preventDefault(); // Don't send the form!
-//         ref.push({
-//             done: false,
-//             text: this.newItemValue
-//         });
-//         this.newItemValue = '';
-//     },
-//     toggleItem: function(event) {
-//         ref.
-//             child(event.model.item.uid).
-//             update({done: event.model.item.done});
-//     },
-//     deleteItem: function(event) {
-//         ref.child(event.model.item.uid).remove();
-//     } 
+    },
+    handleDown: function(data) {
+        $colour = $('#colorPicker').prop("color")
+        $colour = $colour ? $colour : '#df4b26';
+        
+        dragref = ref.push({colour: $colour});
+    },
+    handleMove: function(data) {
+        dragref.ref().child('points').push({x: data.detail.x, y: data.detail.y});
+    },
+    handleUp: function(data) {
+        dragref = "";
+    },
+    onFirebaseError: function(event) {
+        this.$.errorToast.text = event.detail.message;
+        this.$.errorToast.show();
+    },
+    onFirebaseLogin: function(event) {
+        ref = new Firebase(this.firebaseURL);
+        ref.observe('child_added')
+            .subscribe(function (newLine) {
+                newLine.snapshot.child('points').ref()
+                .observe('child_added')
+                .filter(function (data) { return data.prevName !== null;})
+                .subscribe(self.$.polyCanvas.drawCanvasLine);
+            });  
+    },
+    cleanCanvas: function(event) {
+       ref.remove();
+    } 
   });
 
  

@@ -90,20 +90,21 @@
 	}
 	</style>
   
-	<template><firebase-auth
+	<template>
+        <!--<firebase-auth
             auto-login
             redirect
             location="[[firebaseURL]]"
             provider="[[firebaseProvider]]"
             on-error="onFirebaseError"
             on-login="onFirebaseLogin"></firebase-auth>
-        <paper-toast id="errorToast"></paper-toast>
+        <paper-toast id="errorToast"></paper-toast>-->
         <div class="row-fluid">
             <canvas id="canvas" width="640" height="480"></canvas>
         </div>
-        <paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
+        <!--<paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
         {{selectedColor}}
-        <paper-button on-click="cleanCanvas">Clean</paper-button>
+        <paper-button on-click="cleanCanvas">Clean</paper-button>-->
 	</template>
 </dom-module>
 
@@ -159,26 +160,28 @@
             var mouseDowns  = Rx.Observable.fromEvent(this.canvas, 'mousedown');
             var mouseUps    = Rx.Observable.fromEvent(document, 'mouseup');
             var mouseMoves  = Rx.Observable.fromEvent(this.canvas, 'mousemove');
-            var clearButton = Rx.Observable.fromEvent($('#clear'), 'click');
-
+            
             var mouseDrags = mouseDowns.select(function (downEvent) {
                 _this.prevPoint = "";
+                //console.log("mouseDowns");
+                _this.fire('down');
                 return mouseMoves.takeUntil(mouseUps).select(function (drag) {
+                    //console.log("mouseMoves");
                     return getOffset(drag);
-                });
-            });
+                }).doOnCompleted(function(data){
+                    //console.log("mouseUp");
+                    _this.fire('up');
+                })
+            });           
 
             // UI EVENTS
             mouseDrags.subscribe(function (drags) {
-                $colour = $('#colorPicker').prop("color")
-                $colour = $colour ? $colour : '#df4b26';
-                
-                var dragref = ref.push({colour: $colour});
-                //console.log("colour: " + $colour);
-                //var colour = '#df4b26';
+                // $colour = $('#colorPicker').prop("color")
+                // $colour = $colour ? $colour : '#df4b26';
+                //var dragref = ref.push({colour: $colour});
                 
                 drags.subscribe(function (move) {
-                    // _this.fire('draw', {x: move.x, y: move.y});
+                    _this.fire('move', {x: move.x, y: move.y});
                     // if (!_this.prevPoint)
                     // {
                     //     _this.prevPoint = {x: move.x, y: move.y}
@@ -194,107 +197,30 @@
                     //     
                     // }
                     
-                    dragref.ref().child('points').push({x: move.x, y: move.y});
-                    //console.log("x: " + move.x + " y:" + move.y);
-                    
+                    //dragref.ref().child('points').push({x: move.x, y: move.y});
                 });
             });
-
-            clearButton.subscribe(function () {
-                ref.remove();
-            });
-
-//             
-// 
-//             
         }
 	},
-    // handleDraw: function(point) {
-    //     console.log(point.detail.x + " " + point.detail.y );
-    // },
-    onFirebaseError: function(event) {
-    this.$.errorToast.text = event.detail.message;
-    this.$.errorToast.show();
-    },
-    onFirebaseLogin: function(event) {
-        ref = new Firebase(this.firebaseURL);
-       
-        
-        var drawLine = function (data) {
-            //debugger;
-            // get current point
-            var coordsTo = data.snapshot.val();
-            // get colour
-            data.snapshot.ref().parent().parent().child('colour')
+    drawCanvasLine: function(line) {
+        // get current point
+        var coordsTo = line.snapshot.val();
+        // get colour
+        line.snapshot.ref().parent().parent().child('colour')
+        .once('value', function (snap) {
+            var colour = snap.val();
+            // get previous point
+            line.snapshot.ref().parent().child(line.prevName)
             .once('value', function (snap) {
-                var colour = snap.val();
-                // get previous point
-                data.snapshot.ref().parent().child(data.prevName)
-                .once('value', function (snap) {
-                    var coordsFrom = snap.val();
-                    ctx.beginPath();
-                    ctx.strokeStyle = colour;
-                    ctx.moveTo(coordsFrom.x, coordsFrom.y);
-                    ctx.lineTo(coordsTo.x, coordsTo.y);
-                    ctx.stroke();
-                });
+                var coordsFrom = snap.val();
+                ctx.beginPath();
+                ctx.strokeStyle = colour;
+                ctx.moveTo(coordsFrom.x, coordsFrom.y);
+                ctx.lineTo(coordsTo.x, coordsTo.y);
+                ctx.stroke();
             });
-        };
-           
-        ref.observe('child_added')
-            .subscribe(function (newLine) {
-                newLine.snapshot.child('points').ref()
-                .observe('child_added')
-                .filter(function (data) { return data.prevName !== null;})
-                .subscribe(drawLine);
-            });
-        
-        
-        /*
-        ref.on('value', function(snapshot) {
-            this.items = [];
-            var coordsFrom;
-            
-            snapshot.forEach(function(childSnapshot) {
-                var coordsFrom = null;
-                var item = childSnapshot.val();
-                var colour = item.colour;
-                item.uid = childSnapshot.key();
-                for(var point in item.points) {
-                    var coordsTo = item.points[point];
-                    if (!coordsFrom)
-                    {
-                        coordsFrom = coordsTo;
-                    }
-                    else{
-                        ctx.beginPath();
-                        ctx.strokeStyle = colour;
-                        ctx.moveTo(coordsFrom.x, coordsFrom.y);
-                        ctx.lineTo(coordsTo.x, coordsTo.y);
-                        ctx.stroke();
-                        coordsFrom = coordsTo;
-                    }
-                }
-            }.bind(this));
-        }); 
-        */
-
-        ref.on('child_removed', function (snap) {
-            canvas.width = canvas.width;
-            ctx.lineWidth = 3;
-        });    
-    },
-    updateItems: function(snapshot) {
-        this.items = [];
-        snapshot.forEach(function(childSnapshot) {
-            var item = childSnapshot.val();
-            item.uid = childSnapshot.key();
-            this.push('items', item);
-        }.bind(this));
-    },
-    cleanCanvas: function(event) {
-       ref.remove();
-    }    
+        });
+    }  
   });
 
  
