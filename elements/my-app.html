@@ -8,6 +8,8 @@
 	<link href="../bower_components/polymer/polymer.html" rel="import">
     <link rel="import" href="../bower_components/firebase-element/firebase-auth.html">
     <link rel="import" href="../bower_components/firebase-element/firebase.html">
+    <script src="../bower_components/rxjs/dist/rx.lite.js"></script>
+    <script src="../scripts/rx.firebase.js"></script>
     <link rel="import" href="../bower_components/iron-icons/iron-icons.html">
     <link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
     <link rel="import" href="../bower_components/paper-button/paper-button.html">
@@ -82,7 +84,6 @@
             </div>
         </template>-->
         <paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
-        {{selectedColor}}
         <paper-button on-click="cleanCanvas">Clean</paper-button>
         <h2>Hello canvas:</h2>
         <poly-canvas id="polyCanvas" class="shadow" width="300px" height="300px">
@@ -109,6 +110,10 @@
             type: String,
             value: 'anonymous'
         },
+        selectedColor: {
+            type: String,
+            value: '#df4b26'
+        },        
         items: {
             type: Array,
             value: []
@@ -121,10 +126,7 @@
         self = this;
     },
     handleDown: function(data) {
-        $colour = $('#colorPicker').prop("color")
-        $colour = $colour ? $colour : '#df4b26';
-        
-        dragref = ref.push({colour: $colour});
+        dragref = ref.push({colour: this.selectedColor});
     },
     handleMove: function(data) {
         dragref.ref().child('points').push({x: data.detail.x, y: data.detail.y});
@@ -145,6 +147,10 @@
                 .filter(function (data) { return data.prevName !== null;})
                 .subscribe(self.$.polyCanvas.drawCanvasLine);
             });  
+        ref.on('child_removed', function (snap) {
+            self.$.polyCanvas.cleanCanvas();
+        });
+      
     },
     cleanCanvas: function(event) {
        ref.remove();

@@ -2,109 +2,14 @@
 <html>
 <head>
 	<link href="../bower_components/polymer/polymer.html" rel="import">
-    <script src="../bower_components/jquery/dist/jquery.js"></script>
     <script src="../bower_components/rxjs/dist/rx.lite.js"></script>
-    <link href="../bower_components/firebase-element/firebase-auth.html" rel="import" >
-    <link href="../bower_components/firebase-element/firebase.html" rel="import">
-    <link href="../bower_components/paper-input/paper-input.html" rel="import">
-    <link href="../bower_components/paper-swatch-picker/paper-swatch-picker.html" rel="import">
-    <script src="../scripts/rx.firebase.js"></script>
 </head>
 
 <dom-module id="poly-canvas">
-	<style>
-	.list {
-		padding: 0;
-/* 		border-right: 1px solid #ccc; */
-	}
-	
-	.list paper-item {
-		min-height: 80px;
-		border-bottom: 1px solid #dedede;
-		background-color: #fafafa;
-	}
-	
-	#todoEntry {
-		margin: 0;
-		width: 100%;
-		max-width: none;
-		border-bottom: 1px solid #ccc;
-	}
-	
-	paper-input {
-		margin: 0 4vw;
-		padding: 0;
-	}
-	
-	paper-material {
-		background-color: #fff;
-		max-width: 640px;
-		width: 95%;
-		margin: 25px auto;
-		position: relative;
-	}
-	
-	#todos {
-		overflow-y: scroll;
-		height: 66vh;
-	}
-
-	#todos {
-		overflow-y: scroll;
-	}
-  
-	paper-fab {
-	    position: absolute;
-	    background: #00BCD4;
-	    bottom: 2vh;
-	    right: 2vw;
-    }
-
-	.main-panel {
-		background-color: #eee;
-		height: 100vh;
-		overflow-y: hidden;
-	}
-	
-	.task-empty paper-item {
-		text-align: center;
-		padding: 25px;
-		color: #6f6f6f;
-	}
-
-	paper-toolbar {
-		background:#D32F2F;
-	}
-	
-	#made-with {
-		width:100%;
-		margin:0;
-		position: fixed;
-		bottom: 0;
-		text-align: center;
-	}
-	
-	#made-with img {
-		width: 35%;
-		padding: 10px;
-	}
-	</style>
-  
 	<template>
-        <!--<firebase-auth
-            auto-login
-            redirect
-            location="[[firebaseURL]]"
-            provider="[[firebaseProvider]]"
-            on-error="onFirebaseError"
-            on-login="onFirebaseLogin"></firebase-auth>
-        <paper-toast id="errorToast"></paper-toast>-->
         <div class="row-fluid">
             <canvas id="canvas" width="640" height="480"></canvas>
         </div>
-        <!--<paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
-        {{selectedColor}}
-        <paper-button on-click="cleanCanvas">Clean</paper-button>-->
 	</template>
 </dom-module>
 
@@ -115,29 +20,13 @@
   var ctx;
   Polymer({
     is: "poly-canvas",
-    
-    
+   
     // add properties and methods on the element's prototype
-    properties: {
-        newItemValue: {
-            type: String
-        },        
-        selectedColor: {
-            type: String,
-            reflect: true
-        },
-        firebaseURL: {
-            type: String,
-            value: 'https://polyrx-fire.firebaseio.com'
-        },
-        firebaseProvider: {
-            type: String,
-            value: 'anonymous'
-        },
-        items: {
-            type: Array,
-            value: []
-        },
+    properties: {      
+        // selectedColor: {
+        //     type: String,
+        //     reflect: true
+        // }
     },
 	ready: function(e){
         // Calculate offset either layerX/Y or offsetX/Y
@@ -150,7 +39,6 @@
         
         self = this;
         var _this = this;
-        //ref = new Firebase(this.firebaseURL);
         this.canvas = this.$.canvas;
         if (this.canvas.getContext) {
             
@@ -176,28 +64,8 @@
 
             // UI EVENTS
             mouseDrags.subscribe(function (drags) {
-                // $colour = $('#colorPicker').prop("color")
-                // $colour = $colour ? $colour : '#df4b26';
-                //var dragref = ref.push({colour: $colour});
-                
                 drags.subscribe(function (move) {
                     _this.fire('move', {x: move.x, y: move.y});
-                    // if (!_this.prevPoint)
-                    // {
-                    //     _this.prevPoint = {x: move.x, y: move.y}
-                    // }
-                    // else
-                    // {
-                    //    ctx.beginPath();
-                    //     ctx.strokeStyle = colour;
-                    //     ctx.moveTo(_this.prevPoint.x, _this.prevPoint.y);
-                    //     ctx.lineTo(move.x, move.y);
-                    //     ctx.stroke(); 
-                    //     _this.prevPoint = {x: move.x, y: move.y}
-                    //     
-                    // }
-                    
-                    //dragref.ref().child('points').push({x: move.x, y: move.y});
                 });
             });
         }
@@ -220,6 +88,10 @@
                 ctx.stroke();
             });
         });
+    },
+    cleanCanvas: function () {
+        this.$.canvas.width = this.$.canvas.width;
+        ctx.lineWidth = 3;
     }  
   });
 
