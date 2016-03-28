@@ -2,37 +2,77 @@
 <html>
 <head>
 	<link href="../bower_components/polymer/polymer.html" rel="import">
-    <link href="../bower_components/firebase-element/firebase-document.html" rel="import">
+    <link rel="import" href="../bower_components/firebase-element/firebase-auth.html">
+    <link rel="import" href="../bower_components/firebase-element/firebase.html">
     <script src="../bower_components/rxjs/dist/rx.lite.js"></script>
+    <script src="../scripts/rx.firebase.js"></script>
 </head>
 
 <dom-module id="poly-fire">
 	<template>
-        <!--<firebase-document
-            location = "https://polyrx-fire.firebaseio.com//trial"
-            data     = "{{trial}}">
-        </firebase-document>--> 
+        <firebase-auth
+            auto-login
+            redirect
+            location="[[firebaseURL]]"
+            provider="[[firebaseProvider]]"
+            on-error="onFirebaseError"
+            on-login="onFirebaseLogin"></firebase-auth>
+        <paper-toast id="errorToast"></paper-toast>
 	</template>
 </dom-module>
 
 <script>
   // element registration
+  var ref;
+  var self;
+  var dragref;
   Polymer({
     is: "poly-fire",
     
     
     // add properties and methods on the element's prototype
     properties: {
-    	// declare properties for the element's public API
-		todo: {
-			type: Array,
-			value: []
-		}
+    	firebaseURL: {
+            type: String,
+            value: 'https://polyrx-fire.firebaseio.com'
+        },
+        firebaseProvider: {
+            type: String,
+            value: 'anonymous'
+        }
     },
 	ready: function(e){
-        debugger;
-
-	}
+        self = this;
+	},
+    onFirebaseLogin: function(event) {
+        ref = new Firebase(this.firebaseURL);
+        ref.observe('child_added')
+            .subscribe(function (newLine) {
+                newLine.snapshot.child('points').ref()
+                .observe('child_added')
+                .filter(function (data) { return data.prevName !== null;})
+                .subscribe(function(line){
+                    self.fire('newLine', line);
+                });
+            });  
+        ref.on('child_removed', function (snap) {
+            self.fire('cleanCanvas');
+        });
+      
+    },
+    handleDown: function(data) {
+        dragref = ref.push({colour: data});
+    },
+    handleMove: function(data) {
+        dragref.ref().child('points').push({x: data.detail.x, y: data.detail.y});
+    },
+    handleUp: function(data) {
+        dragref = "";
+    },
+    cleanFire: function(){
+        ref.remove();
+    }
+    
   });
 
  
