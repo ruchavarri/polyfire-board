@@ -9,6 +9,7 @@ app.use(express.static(__dirname )); // + '/wwwroot')); // set the static files 
 
 
 // start app ===============================================
-app.listen(port);	
-console.log('Magic happens on port ' + port); 			// shoutout to the user
-exports = module.exports = app; 						// expose app
+app.listen(port,function(){
+	console.log('Magic happens on port ' + port); 			// shoutout to the user
+	exports = module.exports = app; 						// expose app
+});
