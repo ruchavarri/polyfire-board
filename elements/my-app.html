@@ -62,8 +62,8 @@
         <paper-swatch-picker id="colorPicker" color="{{selectedColor}}"></paper-swatch-picker>
         <paper-button on-click="cleanFire">Clean</paper-button>
         <h2>Hello canvas:</h2>
-        <poly-canvas id="polyCanvas" class="shadow" width="300px" height="300px">
-        <poly-fire id="polyFire">
+        <poly-canvas id="polyCanvas" class="shadow" width="300px" height="300px"/>
+        <poly-fire id="polyFire"/>
     </template>
 </dom-module>
 
@@ -86,26 +86,35 @@
         this.addEventListener('up', this.handleUp);
         
         this.addEventListener('newLine', this.newLine);
-        this.addEventListener('cleanCanvas', this.cleanCanvas);
+        this.addEventListener('childRemoved', this.childRemoved);
+        this.addEventListener('childAdded', this.childAdded);
         self = this;
     },
     handleDown: function(data) {
-        self.$.polyFire.handleDown(this.selectedColor); 
+        self.$.polyFire.newRef(this.selectedColor); 
     },
     handleMove: function(data) {
-        self.$.polyFire.handleMove(data); 
+        data.child = "points";
+        data.details = {x: data.detail.x, y: data.detail.y};
+        //self.$.polyFire.handleMove(data); 
+        self.$.polyFire.pushRef(data); 
     },
     handleUp: function(data) {
-        self.$.polyFire.handleUp(data); 
-    },
-    newLine: function(line) {
-       self.$.polyCanvas.drawCanvasLine(line.detail);
-    },
-    cleanCanvas: function(event) {
-       self.$.polyCanvas.cleanCanvas();
+        self.$.polyFire.closeRef(); 
     },
     cleanFire: function(event) {
         self.$.polyFire.cleanFire();
+    },
+    childAdded: function(event) {
+       event.detail.snapshot.child('points').ref()
+        .observe('child_added')
+        .filter(function (data) { return data.prevName !== null;})
+        .subscribe(function(line){
+            self.$.polyCanvas.drawCanvasLine(line);
+        });
+    },
+    childRemoved: function(event) {
+       self.$.polyCanvas.cleanCanvas();
     }
   });
 

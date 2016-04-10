@@ -47,32 +47,26 @@
     onFirebaseLogin: function(event) {
         ref = new Firebase(this.firebaseURL);
         ref.observe('child_added')
-            .subscribe(function (newLine) {
-                newLine.snapshot.child('points').ref()
-                .observe('child_added')
-                .filter(function (data) { return data.prevName !== null;})
-                .subscribe(function(line){
-                    self.fire('newLine', line);
-                });
+            .subscribe(function (child) {
+                self.fire('childAdded',child);
             });  
         ref.on('child_removed', function (snap) {
-            self.fire('cleanCanvas');
+            self.fire('childRemoved');
         });
       
     },
-    handleDown: function(data) {
+    newRef: function(data) {
         dragref = ref.push({colour: data});
     },
-    handleMove: function(data) {
-        dragref.ref().child('points').push({x: data.detail.x, y: data.detail.y});
+    pushRef:function(data) {
+        dragref.ref().child(data.child).push(data.details);
     },
-    handleUp: function(data) {
+    closeRef: function() {
         dragref = "";
     },
     cleanFire: function(){
         ref.remove();
     }
-    
   });
 
  
