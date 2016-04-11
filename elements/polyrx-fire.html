@@ -13,7 +13,7 @@
         <firebase-auth
             auto-login
             redirect
-            location="[[firebaseURL]]"
+            location="[[firebaseUrl]]"
             provider="[[firebaseProvider]]"
             on-error="onFirebaseError"
             on-login="onFirebaseLogin"></firebase-auth>
@@ -32,20 +32,20 @@
     
     // add properties and methods on the element's prototype
     properties: {
-    	firebaseURL: {
+    	firebaseUrl: {
             type: String,
-            value: 'https://polyrx-fire.firebaseio.com'
+            value: ''
         },
         firebaseProvider: {
             type: String,
-            value: 'anonymous'
+            value: ''   // Custom | Email & Password | anonymous | facebook | twitter | github | google  
         }
     },
 	ready: function(e){
         self = this;
 	},
     onFirebaseLogin: function(event) {
-        ref = new Firebase(this.firebaseURL);
+        ref = new Firebase(this.firebaseUrl);
         ref.observe('child_added')
             .subscribe(function (child) {
                 self.fire('childAdded',child);
@@ -56,7 +56,7 @@
       
     },
     newRef: function(data) {
-        dragref = ref.push({colour: data});
+        dragref = ref.push(data);
     },
     pushRef:function(data) {
         dragref.ref().child(data.child).push(data.details);
